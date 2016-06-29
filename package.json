@@ -1,0 +1,26 @@
+{
+  "name": "minecontrol",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jessehattabaugh/minecontrol.git"
+  },
+  "author": "Jesse Hattabaugh<arkanciscan@gmail.com>",
+  "license": "Artistic-2.0",
+  "bugs": {
+    "url": "https://github.com/jessehattabaugh/minecontrol/issues"
+  },
+  "homepage": "https://github.com/jessehattabaugh/minecontrol#readme",
+  "devDependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "jsonwebtoken": "^7.0.1",
+    "litesocket": "^0.9.3",
+    "simple-rcon": "^0.3.0"
+  }
+}
