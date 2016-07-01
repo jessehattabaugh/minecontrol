@@ -1,9 +1,9 @@
-# minecontrol
+# Minecontrol
 
-A web app that can send commands to a minecraft server.
+A web app that can send commands to a Minecraft server.
 
-## Rcon
+[Hosted on Now.js](https://minecontrol-xoesdobhkj.now.sh/)
 
-Minecraft servers can be configured to accept rcon connections. Rcon is a socket protocol. As such many Node.js packages for doing rcon do not work in the browser. 
+## Configuring Minecraft Server to use sRcon
 
-The plan is to run a simple http server that executes rcon commands on behalf of the client. My first attempts using simple-rcon and express could execute commands successfully, but the connection seemed to immediately disconnect. That makes me think there's little point 
+Minecraft Server can use a protocol called rcon to allow admins to execute commands remotely. This must be turned on for Minecontrol to work. To enable this feature the admin must set `enable-rcon=true` and `rcon.password=YOUR_PASSWORD` in the server's `server.properties` configuration file. Anyone who has the password will be able to execute commands as /op, so the password should be kept secret.
