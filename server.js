@@ -1,51 +1,26 @@
-const Rcon = require('simple-rcon');
 const express = require('express');
 const app = express();
-const bodyParser = require('body-parser');
-const jwt = require('jsonwebtoken');
+var bodyParser = require('body-parser');
 
-app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use(express.static('www'));
+const Rcon = require('simple-rcon');
 
-app.sse = require('litesocket').handler;
+app.use(express.static('static'));
 
-app.sse('/events', function (req, res){
-  res.send({
-    token: jwt.sign({}, 'NOTSECRET')
-  });
-});
-
-app.post('/connections', function (req, res) {
-  console.info(`Initiating new connection to: ${req.body.host}`);
-  
-  const rcon = new Rcon({
+app.post('/exec', function (req, res) {
+  console.log(req.body);
+  new Rcon({
     host: req.body.host,
-    port: 25575,
+    port: req.body.port || 25575,
     password: req.body.pass
   })
-    .exec('say hi', () => console.log('said hi'))
-    
     .connect()
-    
-    .on('authenticated', function() {
-      console.log('Authenticated!');
-      res.send("authenticated");
-    })
-    
-    .on('connected', function() {
-      console.log('Connected!');
-      res.send("connected");
-    })
-    
-    .on('error', err => !err || console.error(err))
-    
-    .on('disconnected', function() {
-      console.log('Disconnected!');
-      res.send("disconnected");
-    });
+    .exec(req.body.cmd, msg => res.json(msg))
+    .on('error', err => res.json(err));
 });
 
-app.listen(process.env.PORT, process.env.IP);
-
-console.info("server started at " + process.env.IP + ':' + process.env.PORT);
+app.listen(process.env.PORT, process.env.IP, function () {
+  console.info(`Server started at http://${process.env.IP}:${process.env.PORT}`);
+});
