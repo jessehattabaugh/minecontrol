@@ -5,6 +5,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "browserify --debug client.js > static/index.js",
+    "prestart": "npm run build",
     "start": "node server.js",
     "watch-client": "watchify client.js -o static/index.js &",
     "watch-server": "supervisor server.js &",
