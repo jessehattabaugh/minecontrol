@@ -1,16 +1,19 @@
 const express = require('express');
+const bodyParser = require('body-parser');
+const Rcon = require('simple-rcon');
+
+const host = process.env.IP || 'localhost';
+const port = process.env.PORT || 8080;
+
 const app = express();
-var bodyParser = require('body-parser');
+
+app.use(express.static('static'));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const Rcon = require('simple-rcon');
-
-app.use(express.static('static'));
-
 app.post('/exec', function (req, res) {
-  console.log(req.body);
+  console.info(`Command recieved`);
   new Rcon({
     host: req.body.host,
     port: req.body.port || 25575,
@@ -21,6 +24,6 @@ app.post('/exec', function (req, res) {
     .on('error', err => res.json(err));
 });
 
-app.listen(process.env.PORT, process.env.IP, function () {
-  console.info(`Server started at http://${process.env.IP}:${process.env.PORT}`);
+app.listen(port, host, function () {
+  console.info(`Server started at http://${host}:${port}`);
 });
