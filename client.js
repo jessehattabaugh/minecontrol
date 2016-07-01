@@ -66,39 +66,15 @@ const mainView = function (params, state, send) {
     <main id="app">
       <h1>Minecontrol</h1>
       <form method="post" action="exec" onsubmit=${onsubmit}>
-        <label>Host
-          <input name="host" 
-            type="text"
-            placeholder="mc.yourdomain.com" 
-            value=${state.host}
-            oninput=${ev => send('host', {val: ev.target.value})}/>
-        </label>
-        
-        <label>Port
-          <input name="port" 
-            type="number" 
-            placeholder="25575" 
-            value=${state.port}
-            oninput=${ev => send('port', {val: ev.target.value})}/>
-        </label>
-        
-        <label>Password
-          <input name="pass" 
-            type="password" 
-            value=${state.pass}
-            oninput=${ev => send('pass', {val: ev.target.value})}/>
-        </label>
-        
-        <label>Command
-          <input name="cmd" 
-            type="text" 
-            placeholder="say hello world" 
-            value=${state.cmd}
-            oninput=${ev => send('cmd', {val: ev.target.value})}/>
-        </label>
+      
+        ${field('host', state.host, 'mc.yourdomain.com', ev => send('host', {val: ev.target.value}))}
+        ${field('port', state.port, '25575', ev => send('port', {val: ev.target.value}), 'number')}
+        ${field('pass', state.pass, '', ev => send('pass', {val: ev.target.value}), 'password')}
+        ${field('cmd', state.cmd, 'say Hello Minecraft!', ev => send('cmd', {val: ev.target.value}))}
         
         <input type="submit" value="Execute Command"/>
       </form>
+      <output>${stat}</output>
     </main>
   `;
 };
@@ -114,4 +90,16 @@ function set(key, val, state) {
   const out = {};
   out[key] = val;
   return Object.assign({}, state, out);
-};
+}
+
+function field(name, value, placeholder, oninput, type='text') {
+  return choo.view`
+    <label style="text-transform: capitalize">${name}
+      <input name=${name} 
+        type=${type}
+        placeholder=${placeholder} 
+        value=${value}
+        oninput=${oninput}/>
+    </label>
+  `;
+}
