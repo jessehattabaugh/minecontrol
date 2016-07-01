@@ -10,6 +10,7 @@ const Rcon = require('simple-rcon');
 app.use(express.static('static'));
 
 app.post('/exec', function (req, res) {
+  console.log(req.body);
   new Rcon({
     host: req.body.host,
     port: req.body.port || 25575,

@@ -4,7 +4,10 @@
   "description": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prestart": "browserify client.js > static/index.js"
+    "prestart": "browserify --debug client.js > static/index.js",
+    "watch-client": "watchify client.js -o static/index.js &",
+    "watch-server": "supervisor server.js &",
+    "watch": "npm run watch-client & npm run watch-server"
   },
   "repository": {
     "type": "git",
@@ -21,6 +24,7 @@
     "browserify": "^13.0.1",
     "choo": "^2.3.1",
     "express": "^4.14.0",
-    "simple-rcon": "^0.3.0"
+    "simple-rcon": "^0.3.0",
+    "watchify": "^3.7.0"
   }
 }
