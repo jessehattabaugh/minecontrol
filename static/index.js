@@ -1,6 +1,5 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 const choo = require('choo');
-const http = require('choo/http');
 
 const app = choo();
  
@@ -10,101 +9,129 @@ app.model({
     port: 25575,
     pass: 'wubalubadubdub',
     cmd: 'time set day',
-    prev: []
+    log: [],
+    settings: true,
+    history: false
   },
-  
-  reducers: {
-    //host: (action, state) => Object.assign({}, state, {host: action.val}),
-    host: (action, state) => set('host', action.val, state),
-    port: (action, state) => set('port', action.val, state),
-    pass: (action, state) => set('pass', action.val, state),
-    cmd: (action, state) => set('cmd', action.val, state)
-  },
-  
-  effects: {
-    // print some info to the console
-    info: (action, state) => console.info(action.msg),
-    
-    // print an error to the console
-    error: (action, state) => console.error(`error: ${action.msg}`),
-    
-    // send a command to the server
-    exec: function (action, state, send) {
-      
-      //console.log('exec effect state: ', state);
-      //console.dir(arguments);
-      
-      http.post('/exec', {json: state}, function (err, res, body) {
-        if (err) {
-          return send('error', err.msg);
-        }
-        if (res.statusCode !== 200 || !body) {
-          return send('error', 'http request failed');
-        }
-        //console.log('post callback body: ', body);
-        if (body.errno) {
-          send('error', `${body.code}: couldn't ${body.syscall} to ${body.address}:${body.port}`);
-        } else {
-          send('info', {
-            msg: body.body
-          });
-        }
-      });
-    }
-  }
+  reducers: require('./reducers'),
+  effects: require('./effects')
 });
  
-const mainView = function (params, state, send) {
-  
-  //console.dir(arguments);
-  
-  function onsubmit(ev) {
-    ev.preventDefault();
-    send('exec');
-  }
-  
-  return choo.view`
-    <main id="app">
-      <h1>Minecontrol</h1>
-      <form method="post" action="exec" onsubmit=${onsubmit}>
-      
-        ${field('host', state.host, 'mc.yourdomain.com', ev => send('host', {val: ev.target.value}))}
-        ${field('port', state.port, '25575', ev => send('port', {val: ev.target.value}), 'number')}
-        ${field('pass', state.pass, '', ev => send('pass', {val: ev.target.value}), 'password')}
-        ${field('cmd', state.cmd, 'say Hello Minecraft!', ev => send('cmd', {val: ev.target.value}))}
-        
-        <input type="submit" value="Execute Command"/>
-      </form>
-      <output>${stat}</output>
-    </main>
-  `;
-};
- 
 app.router((route) => [
-  route('/', mainView)
+  route('/', require('./main.js'))
 ]);
  
 app.start('app');
 
 
-function set(key, val, state) {
-  const out = {};
-  out[key] = val;
-  return Object.assign({}, state, out);
+
+},{"./effects":2,"./main.js":3,"./reducers":39,"choo":11}],2:[function(require,module,exports){
+const http = require('choo/http');
+
+exports.info = (action, state) => console.info(action.msg);
+exports.error = (action, state) => console.error(`error: ${action.msg}`);
+
+exports.exec = exec;
+
+function exec(action, state, send) {
+  http.post('/exec', {json: state}, function (err, res, body) {
+    if (err) {
+      return send('error', err.msg);
+    }
+    if (res.statusCode !== 200 || !body) {
+      return send('error', 'http request failed');
+    }
+    if (body.errno) {
+      send('error', `${body.code}: couldn't ${body.syscall} to ${body.address}:${body.port}`);
+    } else {
+      send('log', {
+        cmd: state.cmd,
+        res: body.body
+      });
+      send('info', {
+        msg: body.body
+      });
+    }
+  });
+}
+
+},{"choo/http":10}],3:[function(require,module,exports){
+const choo = require('choo');
+const styles = require('./styles');
+
+module.exports = view;
+
+function view(params, state, send) {
+  
+  function exec(ev) {
+    ev.preventDefault();
+    send('exec');
+  }
+  
+  return choo.view`
+    <main id="app" style=${styles.container}>
+      
+      <header style="${styles.spread} ${styles.grass}">
+        <button onclick=${() => send('settings')}>⚙</button>
+        <h1 style="font-size: 1.5em; margin: 0">⛏Minecontrol</h1>
+        <button onclick=${() => send('history')}>⌘</button>
+      </header>
+      
+      <aside style="${styles.panel} left: ${state.settings ? 0: -100}%">
+        <h2>Settings</h2>
+        ${field('host', state.host, 'mc.yourdomain.com', ev => send('host', {val: ev.target.value}))}
+        ${field('port', state.port, '25575', ev => send('port', {val: ev.target.value}), 'number')}
+        ${field('pass', state.pass, '', ev => send('pass', {val: ev.target.value}), 'password')}
+        <button onclick=${() => send('settings')}>Save Settings</button>
+      </aside>
+      
+      <aside style="${styles.panel} right: ${state.history ? 0: -100}%">
+        <h2>Recent commands</h2>
+        <ul>
+          ${recent(state)}
+        </ul>
+        <button onclick=${() => send('history')}>Close</button>
+      </aside>
+      
+      <article>
+        ${field('cmd', state.cmd, 'say Hello Minecraft!', ev => send('cmd', {val: ev.target.value}))}
+        
+        <button onclick=${exec}>Execute Command</button>
+      </article>
+      
+    </main>
+  `;
 }
 
 function field(name, value, placeholder, oninput, type='text') {
   return choo.view`
-    <label style="text-transform: capitalize">${name}
+    <label style=${styles.field}>${name}
       <input name=${name} 
         type=${type}
         placeholder=${placeholder} 
+        style="
+          width: 100%; 
+          font-size: 1.5em;"
         value=${value}
         oninput=${oninput}/>
     </label>
   `;
 }
-},{"choo":9,"choo/http":8}],2:[function(require,module,exports){
+
+function recent(state) {
+  const unique = state.log.reduce(function (prev, val, i, arr) {
+    const next = {};
+    // increment the count
+    next[val.cmd] = 1 + prev[val.cmd] || 0;
+    return Object.assign({}, prev, next);
+  }, {});
+  
+  // TODO sort by count
+  
+  return Object.keys(unique)
+    .map(val => choo.view`<li>/${val}</li>`);
+}
+},{"./styles":40,"choo":11}],4:[function(require,module,exports){
 // http://wiki.commonjs.org/wiki/Unit_Testing/1.0
 //
 // THIS IS NOT TESTED NOR LIKELY TO WORK OUTSIDE V8!
@@ -465,9 +492,9 @@ var objectKeys = Object.keys || function (obj) {
   return keys;
 };
 
-},{"util/":7}],3:[function(require,module,exports){
+},{"util/":9}],5:[function(require,module,exports){
 
-},{}],4:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -492,7 +519,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],5:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -613,14 +640,14 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],6:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -1210,10 +1237,10 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":6,"_process":5,"inherits":4}],8:[function(require,module,exports){
+},{"./support/isBuffer":8,"_process":7,"inherits":6}],10:[function(require,module,exports){
 module.exports = require('xhr')
 
-},{"xhr":22}],9:[function(require,module,exports){
+},{"xhr":24}],11:[function(require,module,exports){
 const history = require('sheet-router/history')
 const sheetRouter = require('sheet-router')
 const document = require('global/document')
@@ -1470,7 +1497,7 @@ function apply (ns, source, target) {
   })
 }
 
-},{"assert":2,"global/document":10,"hash-match":12,"send-action":13,"sheet-router":17,"sheet-router/hash":14,"sheet-router/history":15,"sheet-router/href":16,"xtend":28,"xtend/mutable":29,"yo-yo":30}],10:[function(require,module,exports){
+},{"assert":4,"global/document":12,"hash-match":14,"send-action":15,"sheet-router":19,"sheet-router/hash":16,"sheet-router/history":17,"sheet-router/href":18,"xtend":30,"xtend/mutable":31,"yo-yo":32}],12:[function(require,module,exports){
 (function (global){
 var topLevel = typeof global !== 'undefined' ? global :
     typeof window !== 'undefined' ? window : {}
@@ -1489,7 +1516,7 @@ if (typeof document !== 'undefined') {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-document":3}],11:[function(require,module,exports){
+},{"min-document":5}],13:[function(require,module,exports){
 (function (global){
 if (typeof window !== "undefined") {
     module.exports = window;
@@ -1502,7 +1529,7 @@ if (typeof window !== "undefined") {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],12:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 module.exports = function hashMatch (hash, prefix) {
   var pre = prefix || '/';
   if (hash.length === 0) return pre;
@@ -1513,7 +1540,7 @@ module.exports = function hashMatch (hash, prefix) {
   else return hash.replace(pre, '');
 }
 
-},{}],13:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 (function (process){
 var extend = require('xtend')
 
@@ -1560,7 +1587,7 @@ module.exports = function sendAction (options) {
 }
 
 }).call(this,require('_process'))
-},{"_process":5,"xtend":28}],14:[function(require,module,exports){
+},{"_process":7,"xtend":30}],16:[function(require,module,exports){
 const window = require('global/window')
 const assert = require('assert')
 
@@ -1576,7 +1603,7 @@ function hash (cb) {
   }
 }
 
-},{"assert":2,"global/window":11}],15:[function(require,module,exports){
+},{"assert":4,"global/window":13}],17:[function(require,module,exports){
 const document = require('global/document')
 const window = require('global/window')
 const assert = require('assert')
@@ -1593,7 +1620,7 @@ function history (cb) {
   }
 }
 
-},{"assert":2,"global/document":10,"global/window":11}],16:[function(require,module,exports){
+},{"assert":4,"global/document":12,"global/window":13}],18:[function(require,module,exports){
 const window = require('global/window')
 const assert = require('assert')
 
@@ -1624,7 +1651,7 @@ function href (cb) {
   }
 }
 
-},{"assert":2,"global/window":11}],17:[function(require,module,exports){
+},{"assert":4,"global/window":13}],19:[function(require,module,exports){
 const pathname = require('pathname-match')
 const wayfarer = require('wayfarer')
 const assert = require('assert')
@@ -1693,7 +1720,7 @@ function r (route, inline, child) {
   return [ route, inline, child ]
 }
 
-},{"assert":2,"pathname-match":18,"wayfarer":20}],18:[function(require,module,exports){
+},{"assert":4,"pathname-match":20,"wayfarer":22}],20:[function(require,module,exports){
 const assert = require('assert')
 
 module.exports = match
@@ -1713,7 +1740,7 @@ function match (route) {
     .replace(/\/$/, '')
 }
 
-},{"assert":2}],19:[function(require,module,exports){
+},{"assert":4}],21:[function(require,module,exports){
 
 /**
  * An Array.prototype.slice.call(arguments) alternative
@@ -1748,7 +1775,7 @@ module.exports = function (args, slice, sliceEnd) {
 }
 
 
-},{}],20:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 const assert = require('assert')
 const sliced = require('sliced')
 const trie = require('./trie')
@@ -1810,7 +1837,7 @@ function Wayfarer (dft) {
   }
 }
 
-},{"./trie":21,"assert":2,"sliced":19}],21:[function(require,module,exports){
+},{"./trie":23,"assert":4,"sliced":21}],23:[function(require,module,exports){
 const mutate = require('xtend/mutable')
 const assert = require('assert')
 const xtend = require('xtend')
@@ -1927,7 +1954,7 @@ Trie.prototype.mount = function (route, trie) {
   }
 }
 
-},{"assert":2,"xtend":28,"xtend/mutable":29}],22:[function(require,module,exports){
+},{"assert":4,"xtend":30,"xtend/mutable":31}],24:[function(require,module,exports){
 "use strict";
 var window = require("global/window")
 var once = require("once")
@@ -2148,7 +2175,7 @@ function _createXHR(options) {
 
 function noop() {}
 
-},{"global/window":11,"is-function":23,"once":24,"parse-headers":27,"xtend":28}],23:[function(require,module,exports){
+},{"global/window":13,"is-function":25,"once":26,"parse-headers":29,"xtend":30}],25:[function(require,module,exports){
 module.exports = isFunction
 
 var toString = Object.prototype.toString
@@ -2165,7 +2192,7 @@ function isFunction (fn) {
       fn === window.prompt))
 };
 
-},{}],24:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 module.exports = once
 
 once.proto = once(function () {
@@ -2186,7 +2213,7 @@ function once (fn) {
   }
 }
 
-},{}],25:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 var isFunction = require('is-function')
 
 module.exports = forEach
@@ -2234,7 +2261,7 @@ function forEachObject(object, iterator, context) {
     }
 }
 
-},{"is-function":23}],26:[function(require,module,exports){
+},{"is-function":25}],28:[function(require,module,exports){
 
 exports = module.exports = trim;
 
@@ -2250,7 +2277,7 @@ exports.right = function(str){
   return str.replace(/\s*$/, '');
 };
 
-},{}],27:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 var trim = require('trim')
   , forEach = require('for-each')
   , isArray = function(arg) {
@@ -2282,7 +2309,7 @@ module.exports = function (headers) {
 
   return result
 }
-},{"for-each":25,"trim":26}],28:[function(require,module,exports){
+},{"for-each":27,"trim":28}],30:[function(require,module,exports){
 module.exports = extend
 
 var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -2303,7 +2330,7 @@ function extend() {
     return target
 }
 
-},{}],29:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 module.exports = extend
 
 var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -2322,7 +2349,7 @@ function extend(target) {
     return target
 }
 
-},{}],30:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 var bel = require('bel') // turns template tag into DOM elements
 var morphdom = require('morphdom') // efficiently diffs + morphs two DOM elements
 var defaultEvents = require('./update-events.js') // default events to be copied when dom elements update
@@ -2358,7 +2385,7 @@ module.exports.update = function (fromNode, toNode, opts) {
   }
 }
 
-},{"./update-events.js":36,"bel":31,"morphdom":35}],31:[function(require,module,exports){
+},{"./update-events.js":38,"bel":33,"morphdom":37}],33:[function(require,module,exports){
 var document = require('global/document')
 var hyperx = require('hyperx')
 var onload = require('on-load')
@@ -2497,7 +2524,7 @@ function belCreateElement (tag, props, children) {
 module.exports = hyperx(belCreateElement)
 module.exports.createElement = belCreateElement
 
-},{"global/document":10,"hyperx":32,"on-load":34}],32:[function(require,module,exports){
+},{"global/document":12,"hyperx":34,"on-load":36}],34:[function(require,module,exports){
 var attrToProp = require('hyperscript-attribute-to-property')
 
 var VAR = 0, TEXT = 1, OPEN = 2, CLOSE = 3, ATTR = 4
@@ -2762,7 +2789,7 @@ var closeRE = RegExp('^(' + [
 ].join('|') + ')(?:[\.#][a-zA-Z0-9\u007F-\uFFFF_:-]+)*$')
 function selfClosing (tag) { return closeRE.test(tag) }
 
-},{"hyperscript-attribute-to-property":33}],33:[function(require,module,exports){
+},{"hyperscript-attribute-to-property":35}],35:[function(require,module,exports){
 module.exports = attributeToProperty
 
 var transform = {
@@ -2783,7 +2810,7 @@ function attributeToProperty (h) {
   }
 }
 
-},{}],34:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 /* global MutationObserver */
 var document = require('global/document')
 var window = require('global/window')
@@ -2876,7 +2903,7 @@ function eachMutation (nodes, fn) {
   }
 }
 
-},{"global/document":10,"global/window":11}],35:[function(require,module,exports){
+},{"global/document":12,"global/window":13}],37:[function(require,module,exports){
 // Create a range object for efficently rendering strings to elements.
 var range;
 
@@ -3450,7 +3477,7 @@ function morphdom(fromNode, toNode, options) {
 
 module.exports = morphdom;
 
-},{}],36:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 module.exports = [
   // attribute events (can be set with attributes)
   'onclick',
@@ -3488,4 +3515,63 @@ module.exports = [
   'onfocusout'
 ]
 
+},{}],39:[function(require,module,exports){
+exports.host = (action, state) => set('host', action.val, state),
+
+exports.port = (action, state) => set('port', action.val, state),
+
+exports.pass = (action, state) => set('pass', action.val, state),
+
+exports.cmd = (action, state) => set('cmd', action.val, state),
+
+exports.log = (action, state) => Object.assign({}, state, {
+  log: state.log.concat(action)
+});
+
+exports.settings = (action, state) => Object.assign({}, state, {
+  settings: !state.settings,
+  history: false
+});
+
+exports.history = (action, state) => Object.assign({}, state, {
+  settings: false,
+  history: !state.history
+});
+
+function set(key, val, state) {
+  const out = {};
+  out[key] = val;
+  return Object.assign({}, state, out);
+}
+},{}],40:[function(require,module,exports){
+exports.panel = `
+  position: absolute;
+  width: 90%;
+  padding: 1em;
+  background: #ccc;
+  transition-property: left, right;
+  transition-duration: .5s;
+  transition-timing-function: ease-in-out;
+  box-shadow: 0 .25em 1em rgba(0,0,0,.5);
+`;
+  
+exports.container = `
+  width: 100%; 
+  overflow-x: hidden;
+  background: white;
+`;
+
+exports.spread = `
+  display: flex; 
+  justify-content: space-between;
+`;
+
+exports.grass = `
+  background: linear-gradient(lime, green);
+`;
+
+exports.field = `
+  display: block; 
+  margin-bottom: 1em; 
+  text-transform: capitalize`;
 },{}]},{},[1]);
