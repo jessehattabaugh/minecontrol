@@ -4,13 +4,13 @@ const styles = require('./styles');
 module.exports = view;
 
 function view(params, state, send) {
-  
+
   function exec(ev) {
     ev.preventDefault();
     send('exec');
   }
-  
-  return choo.view`
+
+  return choo.view `
     <main id="app" style=${styles.container}>
       
       <header style="${styles.spread} ${styles.grass}">
@@ -27,7 +27,11 @@ function view(params, state, send) {
         <button onclick=${() => send('settings')}>Save Settings</button>
       </aside>
       
-      <aside style="${styles.panel} right: ${state.history ? 0: -100}%">
+      <aside style="
+        ${styles.panel} 
+        right: ${state.history ? 0: -100}%;
+        display: none; /*DISABLED*/
+        ">
         <h2>Recent commands</h2>
         <ul>
           ${recent(state)}
@@ -35,18 +39,45 @@ function view(params, state, send) {
         <button onclick=${() => send('history')}>Close</button>
       </aside>
       
-      <article>
-        ${field('cmd', state.cmd, 'say Hello Minecraft!', ev => send('cmd', {val: ev.target.value}))}
+      <article style="flex-grow: 1;">
         
-        <button onclick=${exec}>Execute Command</button>
+        <form onsubmit=${exec}
+          style="position: absolute; 
+            bottom: 0; 
+            display: flex; 
+            width: 100%;
+            margin: 0;">
+          <div style="flex-grow: 1;">
+            
+            <input name="cmd" 
+              type="text" 
+              placeholder="enter commands here" 
+              onkeyup=${ev => send('cmd', {
+                val: ev.target.value.charAt(0).toLowerCase() + ev.target.value.slice(1)
+              })}
+              style="${styles.io} border-bottom: none;"
+              value="${state.cmd}" />
+            
+            <output style="${styles.io}
+              color: grey;
+              border-top: none;
+            ">
+              <span style="font-size: smaller;">
+                ${mostRecentServerResponse(state.log)}
+              </span>
+            </output>
+            
+          </div>
+          <button>Send</button>
+        </form>
       </article>
       
     </main>
   `;
 }
 
-function field(name, value, placeholder, oninput, type='text') {
-  return choo.view`
+function field(name, value, placeholder, oninput, type = 'text') {
+  return choo.view `
     <label style=${styles.field}>${name}
       <input name=${name} 
         type=${type}
@@ -61,15 +92,21 @@ function field(name, value, placeholder, oninput, type='text') {
 }
 
 function recent(state) {
-  const unique = state.log.reduce(function (prev, val, i, arr) {
+  const unique = state.log.reduce(function(prev, val, i, arr) {
     const next = {};
     // increment the count
     next[val.cmd] = 1 + prev[val.cmd] || 0;
     return Object.assign({}, prev, next);
   }, {});
-  
+
   // TODO sort by count
-  
+
   return Object.keys(unique)
-    .map(val => choo.view`<li>/${val}</li>`);
+    .map(val => choo.view `<li>/${val}</li>`);
+}
+
+function mostRecentServerResponse(log) {
+  //console.dir(log);
+  const recent = log.slice(-1)[0];
+  return recent ? recent.res : 'Hi there!';
 }

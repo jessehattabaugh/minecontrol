@@ -10,7 +10,8 @@ exports.panel = `
 `;
   
 exports.container = `
-  width: 100%; 
+  width: 100%;
+  height: 100%;
   overflow-x: hidden;
   background: white;
 `;
@@ -27,8 +28,15 @@ exports.grass = `
 exports.field = `
   display: block; 
   margin-bottom: 1em; 
-  text-transform: capitalize`;
+  text-transform: capitalize;
+`;
   
-exports.button = `
-  background: 
+exports.io = `
+  display: block;
+  width: 100%;
+  background: black;
+  color: white;
+  border: .25em inset silver;
+  font-size: 1.5em;
+  padding: .25em;
 `;

@@ -16,10 +16,16 @@ function exec(action, state, send) {
     if (body.errno) {
       send('error', `${body.code}: couldn't ${body.syscall} to ${body.address}:${body.port}`);
     } else {
+      
+      // save the cmd and response for later
       send('log', {
         cmd: state.cmd,
         res: body.body
       });
+      
+      // reset the cmd field
+      send('cmd', {val: ''});
+      
       send('info', {
         msg: body.body
       });
