@@ -37,6 +37,6 @@ exports.io = `
   background: black;
   color: white;
   border: .25em inset silver;
-  font-size: 1.5em;
+  font-size: 1em;
   padding: .25em;
 `;

@@ -10,7 +10,7 @@ function view(params, state, send) {
     send('exec');
   }
 
-  return choo.view `
+  return choo.view`
     <main id="app" style=${styles.container}>
       
       <header style="${styles.spread} ${styles.grass}">
@@ -55,7 +55,10 @@ function view(params, state, send) {
               onkeyup=${ev => send('cmd', {
                 val: ev.target.value.charAt(0).toLowerCase() + ev.target.value.slice(1)
               })}
-              style="${styles.io} border-bottom: none;"
+              style="
+                ${styles.io} 
+                border-bottom: none;
+              "
               value="${state.cmd}" />
             
             <output style="${styles.io}
@@ -77,7 +80,7 @@ function view(params, state, send) {
 }
 
 function field(name, value, placeholder, oninput, type = 'text') {
-  return choo.view `
+  return choo.view`
     <label style=${styles.field}>${name}
       <input name=${name} 
         type=${type}
@@ -102,7 +105,7 @@ function recent(state) {
   // TODO sort by count
 
   return Object.keys(unique)
-    .map(val => choo.view `<li>/${val}</li>`);
+    .map(val => choo.view`<li>/${val}</li>`);
 }
 
 function mostRecentServerResponse(log) {
