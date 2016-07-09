@@ -1,6 +1,8 @@
 const choo = require('choo');
 const styles = require('./styles');
 
+const $ = document.querySelector.bind(document);
+
 module.exports = view;
 
 function view(params, state, send) {
@@ -61,7 +63,8 @@ function view(params, state, send) {
               "
               value="${state.cmd}" />
             
-            <output style="${styles.io}
+            <output onclick=${ev => $('input[name=cmd]').focus()}
+            style="${styles.io}
               color: grey;
               border-top: none;
             ">
@@ -111,5 +114,5 @@ function recent(state) {
 function mostRecentServerResponse(log) {
   //console.dir(log);
   const recent = log.slice(-1)[0];
-  return recent ? recent.res : 'Hi there!';
+  return recent && recent.res ? recent.res : '...';
 }

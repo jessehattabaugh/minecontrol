@@ -39,4 +39,5 @@ exports.io = `
   border: .25em inset silver;
   font-size: 1em;
   padding: .25em;
+  outline: none;
 `;

@@ -20,8 +20,14 @@ app.post('/exec', function (req, res) {
     password: req.body.pass
   })
     .connect()
-    .exec(req.body.cmd, msg => res.json(msg))
-    .on('error', err => res.json(err));
+    .exec(req.body.cmd, function (msg) {
+      console.log(msg);
+      res.json(msg);
+    })
+    .on('error', function (err){
+      console.error(err);
+      res.json(err);
+    });
 });
 
 app.listen(port, host, function () {
