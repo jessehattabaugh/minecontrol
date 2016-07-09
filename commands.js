@@ -206,4 +206,6 @@ const commands = {
   },
 };
 
-console.log(Object.keys(commands).filter(v => commands[v].affects.indexOf('players') !== -1))
+//console.log(Object.keys(commands).filter(v => commands[v].affects.indexOf('players') !== -1))
+
+module.exports = commands;

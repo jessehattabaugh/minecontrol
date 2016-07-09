@@ -12,7 +12,7 @@ exports.panel = `
 exports.container = `
   width: 100%;
   height: 100%;
-  overflow-x: hidden;
+  overflow: hidden;
   background: white;
 `;
 
@@ -41,3 +41,7 @@ exports.io = `
   padding: .25em;
   outline: none;
 `;
+
+exports.grow = `flex: grow`;
+
+//exports.header = exports.spread + exports.grass + exports.grow;

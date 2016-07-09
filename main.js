@@ -3,6 +3,8 @@ const styles = require('./styles');
 
 const $ = document.querySelector.bind(document);
 
+const cmds = require('./commands');
+
 module.exports = view;
 
 function view(params, state, send) {
@@ -13,12 +15,17 @@ function view(params, state, send) {
   }
 
   return choo.view`
-    <main id="app" style=${styles.container}>
-      
-      <header style="${styles.spread} ${styles.grass}">
-        <button onclick=${() => send('settings')}>⚙</button>
-        <h1 style="font-size: 1.5em; margin: 0">⛏Minecontrol</h1>
-        <button onclick=${() => send('history')}>⌘</button>
+    <main id="app" style="
+      ${styles.container} 
+      display: flex; 
+      flex-direction: column;
+    ">
+      <header style="${styles.grass}">
+        <div style="${styles.spread}">
+          <button onclick=${() => send('settings')}>⚙</button>
+          <h1 style="font-size: large; margin: 0">⛏Minecontrol</h1>
+          <button onclick=${() => send('history')}>⌘</button>
+        </div>
       </header>
       
       <aside style="${styles.panel} left: ${state.settings ? 0: -100}%">
@@ -41,42 +48,51 @@ function view(params, state, send) {
         <button onclick=${() => send('history')}>Close</button>
       </aside>
       
-      <article style="flex-grow: 1;">
-        
-        <form onsubmit=${exec}
-          style="position: absolute; 
-            bottom: 0; 
-            display: flex; 
-            width: 100%;
-            margin: 0;">
-          <div style="flex-grow: 1;">
-            
-            <input name="cmd" 
-              type="text" 
-              placeholder="enter commands here" 
-              onkeyup=${ev => send('cmd', {
-                val: ev.target.value.charAt(0).toLowerCase() + ev.target.value.slice(1)
-              })}
-              style="
-                ${styles.io} 
-                border-bottom: none;
-              "
-              value="${state.cmd}" />
-            
-            <output onclick=${ev => $('input[name=cmd]').focus()}
-            style="${styles.io}
-              color: grey;
-              border-top: none;
-            ">
-              <span style="font-size: smaller;">
-                ${mostRecentServerResponse(state.log)}
-              </span>
-            </output>
-            
-          </div>
-          <button>Send</button>
-        </form>
+      <article style="flex: 1 1; overflow-y: auto;">
+      
+        <ol style="
+          list-style: none;
+          padding: 0;
+        ">
+          ${Object.keys(cmds).map((cmd, i, data) => choo.view`
+            <li onclick=${ev => send('cmd', {val: cmd})}>${state.cmd == cmd ? '▼' : '►'} ${cmd}</li>
+          `)}
+        </ol>
       </article>
+      
+      <form onsubmit=${exec}
+        style="
+        display: flex; 
+        width: 100%;
+        margin: 0;
+      ">
+        <div style="flex-grow: 1;">
+          
+          <input name="cmd" 
+            type="text" 
+            placeholder="enter commands here" 
+            onkeyup=${ev => send('cmd', {
+              val: ev.target.value.charAt(0).toLowerCase() + ev.target.value.slice(1)
+            })}
+            style="
+              ${styles.io} 
+              border-bottom: none;
+            "
+            value="${state.cmd}" />
+          
+          <output onclick=${ev => $('input[name=cmd]').focus()}
+          style="${styles.io}
+            color: grey;
+            border-top: none;
+          ">
+            <span style="font-size: smaller;">
+              ${mostRecentServerResponse(state.log)}
+            </span>
+          </output>
+          
+        </div>
+        <button>Send</button>
+      </form>
       
     </main>
   `;
