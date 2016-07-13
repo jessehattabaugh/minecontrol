@@ -2,29 +2,12 @@ const commands = {
   
   achievement: {
     affects: ['players'],
-    args: [
-      {
-        type: 'text',
-        options: ['give', 'take']
-      },
-      {
-        type: 'achievement'
-      },
-      {
-        type: 'target',
-        options: ['p']
-      }
-    ]
+    args: Array(3)
   },
   
   ban: {
     affects: ['players'],
-    args: [
-      {
-        type: 'player',
-        options: ['give', 'take']
-      },
-    ]
+    args: Array(1)
   },
   
   'ban-ip': {

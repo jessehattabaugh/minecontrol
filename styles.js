@@ -44,4 +44,6 @@ exports.io = `
 
 exports.grow = `flex: grow`;
 
-//exports.header = exports.spread + exports.grass + exports.grow;
+exports.button = `
+  border: .25em outset silver;
+`;

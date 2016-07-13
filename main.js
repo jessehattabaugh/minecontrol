@@ -22,9 +22,17 @@ function view(params, state, send) {
     ">
       <header style="${styles.grass}">
         <div style="${styles.spread}">
-          <button onclick=${() => send('settings')}>⚙</button>
+          <button 
+              style=${styles.button} 
+              onclick=${() => send('settings')}>
+            ⚙
+          </button>
           <h1 style="font-size: large; margin: 0">⛏Minecontrol</h1>
-          <button onclick=${() => send('history')}>⌘</button>
+          <button 
+            style=${styles.button} 
+            onclick=${() => send('history')}>
+            ⌘<
+          /button>
         </div>
       </header>
       
@@ -45,7 +53,11 @@ function view(params, state, send) {
         <ul>
           ${recent(state)}
         </ul>
-        <button onclick=${() => send('history')}>Close</button>
+        <button 
+          style=${styles.button}
+          onclick=${() => send('history')}>
+          Close
+        </button>
       </aside>
       
       <article style="flex: 1 1; overflow-y: auto;">
@@ -55,7 +67,10 @@ function view(params, state, send) {
           padding: 0;
         ">
           ${Object.keys(cmds).map((cmd, i, data) => choo.view`
-            <li onclick=${ev => send('cmd', {val: cmd})}>${state.cmd == cmd ? '▼' : '►'} ${cmd}</li>
+            <li style="padding: .5em;" onclick=${ev => send('cmd', {val: cmd})}>
+              ${cmd}
+              ${args(state, cmd, data)}
+            </li>
           `)}
         </ol>
       </article>
@@ -91,7 +106,7 @@ function view(params, state, send) {
           </output>
           
         </div>
-        <button>Send</button>
+        <button style=${styles.button}>Send</button>
       </form>
       
     </main>
@@ -131,4 +146,18 @@ function mostRecentServerResponse(log) {
   //console.dir(log);
   const recent = log.slice(-1)[0];
   return recent && recent.res ? recent.res : '...';
+}
+
+function args(state, cmd, data) {
+  if (state.cmd == cmd && data.args) {
+    return choo.view`
+      <ol>
+        ${data.args.map(function (arg, i, argData) {
+          return choo.view`
+            <li>${arg}</li>
+          `;
+        })}
+      </ol>
+    `;
+  }
 }
